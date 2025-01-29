@@ -23,15 +23,20 @@ sealed interface ArticleUiState {
     object Error : ArticleUiState
     object Loading : ArticleUiState
 }
+
+
 class ArticleViewModel(private val articlesRepository: ArticlesRepository): ViewModel() {
 
     var articleUiState: ArticleUiState by mutableStateOf(ArticleUiState.Loading)
         private set
 
-    init {
-        getArticles()
-    }
+    var articleDetailUiState: ArticleUiState by mutableStateOf(ArticleUiState.Loading)
+        private set
 
+
+    init {
+        getArticles() // Fetch articles when the ViewModel is initialized
+    }
 
 
     fun getArticles() {
@@ -43,6 +48,22 @@ class ArticleViewModel(private val articlesRepository: ArticlesRepository): View
                 ArticleUiState.Error
             }catch (e:HttpException) {
                 ArticleUiState.Error
+            }
+        }
+    }
+
+    fun getArticleDetails(id: Int) {
+        viewModelScope.launch {
+            articleDetailUiState = ArticleUiState.Loading
+            try {
+                val article = articlesRepository.getArticleDetails(id)
+                articleDetailUiState = ArticleUiState.Success(listOf(article))
+            } catch (e: IOException) {
+                articleDetailUiState = ArticleUiState.Error
+            } catch (e: HttpException) {
+                articleDetailUiState = ArticleUiState.Error
+            } catch (e: Exception) {
+                articleDetailUiState = ArticleUiState.Error
             }
         }
     }

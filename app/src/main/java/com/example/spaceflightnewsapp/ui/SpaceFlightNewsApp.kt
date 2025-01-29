@@ -23,86 +23,129 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navOptions
+import com.example.spaceflightnewsapp.data.models.Article
+import com.example.spaceflightnewsapp.ui.screens.articles.ArticleDetailScreen
 import com.example.spaceflightnewsapp.ui.screens.articles.ArticleViewModel
 import com.example.spaceflightnewsapp.ui.screens.articles.ArticlesScreen
+import com.example.spaceflightnewsapp.ui.screens.favorites.FavoriteArticles
 import com.example.spaceflightnewsapp.ui.theme.SpaceFlightNewsAppTheme
 
 
 enum class AppScreen(val title: String) {
     Articles(title = "Articles"),
-    FavouriteArticles(title = "Favorites"),
+    FavoriteArticles(title = "Favorites"),
+    ArticleDetails("Article Details")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(
-navController: NavController = rememberNavController()
+fun NewsApp(
+    navController: NavHostController = rememberNavController(),
 ) {
-
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentScreen = when (backStackEntry?.destination?.route) {
+        AppScreen.Articles.name -> AppScreen.Articles
+        AppScreen.FavoriteArticles.name -> AppScreen.FavoriteArticles
+        else -> AppScreen.Articles
+    }
     val articleViewModel: ArticleViewModel = viewModel(factory = ArticleViewModel.Factory)
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(modifier = Modifier.padding(top = 10.dp),
-                title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        Button(modifier = Modifier.width(100.dp),
-                            onClick = {}) {
-                            Text("Previous")
-                        }
 
-                        Button(modifier = Modifier.width(100.dp), onClick = { }) {
-                            Text("Next")
-                        }
-                    }
-                }
-            )
 
-        },
         bottomBar = {
-            BottomAppBar(
+            com.example.spaceflightnewsapp.ui.BottomAppBar(currentScreen = currentScreen,
+                onNewsClick = { navController.navigate(AppScreen.Articles.name) },
+                onFavoritesClick = { navController.navigate(AppScreen.FavoriteArticles.name) }
+            )
+        }
+    ) { innerPadding ->
 
-            )
-        }
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+        NavHost(
+            navController = navController,
+            startDestination = AppScreen.Articles.name,
+            modifier = Modifier.padding(innerPadding)
         ) {
-            ArticlesScreen(
-                articleUiState = articleViewModel.articleUiState,
-                retryAction = articleViewModel::getArticles,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = it
-            )
+            composable(route = AppScreen.Articles.name) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    ArticlesScreen(
+                        retryAction = articleViewModel::getArticles,
+                        modifier = Modifier.fillMaxSize(),
+                        viewModel = articleViewModel,
+                        navController = navController
+                    )
+                }
+            }
+            composable(route = AppScreen.FavoriteArticles.name) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    FavoriteArticles()
+                }
+            }
+            composable(
+                route = "articleDetails/{articleId}",
+                arguments = listOf(navArgument("articleId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val articleId = backStackEntry.arguments?.getString("articleId") ?: ""
+                ArticleDetailScreen(articleId = articleId.toInt(), viewModel = articleViewModel)
+            }
+
         }
+
     }
 }
 
 @Composable
-fun BottomAppBar(navController: NavController
+fun BottomAppBar(
+    currentScreen: AppScreen,
+    onNewsClick: () -> Unit,
+    onFavoritesClick: () -> Unit
 ) {
     androidx.compose.material3.BottomAppBar(
         actions = {
-            Row(modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
 
-                IconButton(onClick = { navController.navigate("news") }) {
-                    Icon(Icons.Filled.Home, contentDescription = "News", modifier = Modifier.size(50.dp))
+                IconButton(onClick = onNewsClick) {
+                    Icon(
+                        Icons.Filled.Home,
+                        contentDescription = "News",
+                        modifier = Modifier.size(50.dp)
+                    )
                 }
-                IconButton(onClick = {navController.navigate("favorites")}) {
-                    Icon(Icons.Filled.Favorite, contentDescription = "Favorites", modifier = Modifier.size(50.dp))
+                Text((currentScreen.title))
+                IconButton(onClick = onFavoritesClick) {
+                    Icon(
+                        Icons.Filled.Favorite,
+                        contentDescription = "Favorites",
+                        modifier = Modifier.size(50.dp)
+                    )
                 }
             }
         }
@@ -114,6 +157,6 @@ fun BottomAppBar(navController: NavController
 @Composable
 fun MainScreenPreview() {
     SpaceFlightNewsAppTheme {
-        MainScreen()
+        NewsApp()
     }
 }

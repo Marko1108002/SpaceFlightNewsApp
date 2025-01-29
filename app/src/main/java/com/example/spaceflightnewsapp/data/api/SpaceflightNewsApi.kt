@@ -12,7 +12,7 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface SpaceflightNewsApi {
-    @GET("articles/")
+    @GET("articles?limit=15")
 
     suspend fun getArticles(
 //        @Query("page") page: Int,
