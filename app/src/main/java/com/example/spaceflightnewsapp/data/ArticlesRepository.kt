@@ -1,8 +1,10 @@
 package com.example.spaceflightnewsapp.data
 
 import android.util.Log
+
 import com.example.spaceflightnewsapp.data.api.SpaceflightNewsApi
 import com.example.spaceflightnewsapp.data.models.Article
+
 
 interface ArticlesRepository {
     suspend fun getArticles(): List<Article>
@@ -26,9 +28,9 @@ class DefaultArticleRepository(
             val response = articlesApiService.getArticleDetails(id)
             return response
         } catch (e: Exception) {
-            // Log the exception
             Log.e("ArticleRepository", "Error fetching article details", e)
-            throw e // rethrow the exception
+            throw e
         }
     }
 }
+

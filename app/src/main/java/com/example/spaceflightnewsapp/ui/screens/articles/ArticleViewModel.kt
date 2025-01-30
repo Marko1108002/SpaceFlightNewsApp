@@ -12,66 +12,65 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import coil.network.HttpException
 import com.example.spaceflightnewsapp.SpaceflightNewsApplication
 import com.example.spaceflightnewsapp.data.ArticlesRepository
-import com.example.spaceflightnewsapp.data.api.SpaceflightNewsApi
 import com.example.spaceflightnewsapp.data.models.Article
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import okio.IOException
 
 
 sealed interface ArticleUiState {
     data class Success(val articles: List<Article>) : ArticleUiState
-    object Error : ArticleUiState
-    object Loading : ArticleUiState
+    data object Error : ArticleUiState
+    data object Loading : ArticleUiState
 }
 
 
-class ArticleViewModel(private val articlesRepository: ArticlesRepository): ViewModel() {
+class ArticleViewModel(private val articlesRepository: ArticlesRepository) : ViewModel() {
 
     var articleUiState: ArticleUiState by mutableStateOf(ArticleUiState.Loading)
         private set
 
-    var articleDetailUiState: ArticleUiState by mutableStateOf(ArticleUiState.Loading)
-        private set
+    private val _articleDetailUiState = MutableStateFlow<ArticleUiState>(ArticleUiState.Loading)
+    val articleDetailUiState: StateFlow<ArticleUiState> = _articleDetailUiState
 
 
     init {
-        getArticles() // Fetch articles when the ViewModel is initialized
+        getArticles()
     }
-
 
     fun getArticles() {
         viewModelScope.launch {
             articleUiState = ArticleUiState.Loading
             articleUiState = try {
                 ArticleUiState.Success(articlesRepository.getArticles())
-            }catch (e:IOException) {
+            } catch (e: IOException) {
                 ArticleUiState.Error
-            }catch (e:HttpException) {
+            } catch (e: HttpException) {
                 ArticleUiState.Error
             }
         }
     }
 
-    fun getArticleDetails(id: Int) {
+
+    fun getArticleDetails(articleId: Int) {
         viewModelScope.launch {
-            articleDetailUiState = ArticleUiState.Loading
             try {
-                val article = articlesRepository.getArticleDetails(id)
-                articleDetailUiState = ArticleUiState.Success(listOf(article))
-            } catch (e: IOException) {
-                articleDetailUiState = ArticleUiState.Error
-            } catch (e: HttpException) {
-                articleDetailUiState = ArticleUiState.Error
+                _articleDetailUiState.value = ArticleUiState.Loading
+                val article = articlesRepository.getArticleDetails(articleId)
+                _articleDetailUiState.value = ArticleUiState.Success(listOf(article))
             } catch (e: Exception) {
-                articleDetailUiState = ArticleUiState.Error
+                _articleDetailUiState.value = ArticleUiState.Error
             }
         }
     }
+
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as SpaceflightNewsApplication)
+                val application =
+                    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as SpaceflightNewsApplication)
                 val articlesRepository = application.container.articlesRepository
                 ArticleViewModel(articlesRepository = articlesRepository)
             }
