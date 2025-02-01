@@ -21,8 +21,8 @@ private val DarkColorScheme = darkColorScheme(
     secondary = PurpleGrey80,
     tertiary = Pink80,
     background = CustomBackgroundColor,
-    onBackground = Color.White, // Adjusted for contrast
-    onSurface = Color.White, // Adjusted for contrast
+    onBackground = Color.White,
+    onSurface = Color.White,
     surface = CustomBackgroundColor
 )
 
@@ -32,8 +32,8 @@ private val LightColorScheme = lightColorScheme(
     secondary = PurpleGrey40,
     tertiary = Pink40,
     background = CustomBackgroundColor,
-    onBackground = Color.White, // Adjusted for contrast
-    onSurface = Color.Black, // Adjusted for contrast
+    onBackground = Color.White,
+    onSurface = Color.Black,
     surface = CustomBackgroundColor
 )
 
